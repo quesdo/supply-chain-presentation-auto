@@ -179,9 +179,37 @@ function syncToSlide(targetSlide) {
     if (targetSlide === -1 && currentSlide !== -1) {
         // Restart to beginning
         restartPresentationLocal();
+    } else if (targetSlide === 0 && currentSlide === -1) {
+        // Start presentation from beginning
+        const nextBtn = document.getElementById('nextBtn');
+
+        // Show Supply Chain Sound and start auto presentation
+        toggleVisibility("Supply Chain Sound", true);
+        soundStarted = true;
+        isPresentationRunning = true;
+
+        // Hide the button during auto-presentation
+        nextBtn.style.display = 'none';
+
+        // Advance to first slide
+        currentSlide = 0;
+        nextSlideLocal();
+    } else if (targetSlide > currentSlide) {
+        // Sync forward progression (someone else advanced)
+        // Make sure presentation is running
+        if (!soundStarted) {
+            const nextBtn = document.getElementById('nextBtn');
+            toggleVisibility("Supply Chain Sound", true);
+            soundStarted = true;
+            isPresentationRunning = true;
+            nextBtn.style.display = 'none';
+        }
+
+        while (currentSlide < targetSlide) {
+            currentSlide++;
+            nextSlideLocal();
+        }
     }
-    // For auto presentation, we don't sync forward progression
-    // Only restart is synced
 
     // Reset flag
     isLocalAction = false;
@@ -241,7 +269,7 @@ function initPresentation() {
     updateProgress();
 }
 
-function nextSlide() {
+async function nextSlide() {
     const textContent = document.getElementById('textContent');
     const slideText = textContent.querySelector('.slide-text');
     const nextBtn = document.getElementById('nextBtn');
@@ -275,6 +303,19 @@ function nextSlide() {
         showEndScreen();
         return;
     }
+
+    // Update Supabase to sync with all clients
+    if (!isLocalAction) {
+        await updateSession({ current_slide: currentSlide });
+    }
+
+    nextSlideLocal();
+}
+
+function nextSlideLocal() {
+    const textContent = document.getElementById('textContent');
+    const slideText = textContent.querySelector('.slide-text');
+    const nextBtn = document.getElementById('nextBtn');
 
     // Animate out current text
     textContent.classList.remove('show');
