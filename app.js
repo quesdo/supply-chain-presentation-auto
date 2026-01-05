@@ -8,7 +8,7 @@ const slides = [
     {
         text: "To anticipate, prepare, and secure physical flows, with the main goal of increasing margin and increasing fulfillment, while minimizing sustainable impact through emitted CO2 Emissions.\n\nThe virtual twin mirrors the entire supply chain ecosystem:\nsuppliers, their capacities, inventories, real lead times, contractual commitments, logistics routes, and even geopolitical risks.",
         media: "SUP 1",
-        timestamp: 10 // 10s
+        timestamp: 3 // 3s
     },
     {
         text: "The result?\nOXOS ensures the right materials arrive at the right time, in the right place.\n\nBut more importantly, this virtual twin is generative.\nBy which we mean that our AI engine is generating new optimized scenarios at every moment.",
@@ -28,7 +28,7 @@ const slides = [
     {
         text: "- even in an unstable world.",
         media: "SUP Content",
-        timestamp: 93 // 93s
+        timestamp: 99 // 99s (1:39)
     }
 ];
 
