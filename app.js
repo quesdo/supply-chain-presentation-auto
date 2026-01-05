@@ -13,22 +13,22 @@ const slides = [
     {
         text: "The result?\nOXOS ensures the right materials arrive at the right time, in the right place.\n\nBut more importantly, this virtual twin is generative.\nBy which we mean that our AI engine is generating new optimized scenarios at every moment.",
         media: "SUP 2",
-        timestamp: 24 // 24s
+        timestamp: 23 // 23s
     },
     {
         text: "It automatically simulates alternative scenarios, proposes Plan B, C, or D, recalculates risks, costs, and lead times, and continuously integrates real-world disruptions.\n\nHere's a concrete example:\na key aerospace & defense supplier announces that they will stop doing business with us in 2 months due to commercial priorities.\n\nNormally, resolving this major challenge would take the team weeks of time to investigate alternatives and calculate the impact.",
         media: "SUP 3",
-        timestamp: 42 // 42s
+        timestamp: 38 // 38s
     },
     {
         text: "However now, with the generative virtual twin of the supply chain we find the solution within minutes!\n\nA new sourcing scenario is generated,\nthe impact on production orders and customer deliveries is recalculated, alternative suppliers are evaluated, and the best cost–risk tradeoff is proposed.\n\nWith OXOS, we ensure we are a reliable partner to deliver to the demanding A&D customers on time.",
         media: "SUP 4",
-        timestamp: 72 // 72s
+        timestamp: 63 // 63s (1:03)
     },
     {
         text: "- even in an unstable world.",
         media: "SUP Content",
-        timestamp: 99 // 99s (1:39)
+        timestamp: 87 // 87s (1:27)
     }
 ];
 
