@@ -32,6 +32,12 @@ const slides = [
     }
 ];
 
+// ===== SUPABASE STATE =====
+let supabaseClient = null;
+let realtimeChannel = null;
+let sessionId = null;
+let isLocalAction = false; // Flag to prevent update loops
+
 // ===== STATE MANAGEMENT =====
 let currentSlide = -1; // Start at -1 to show intro
 let activeMedia = null; // Track currently visible media
@@ -83,10 +89,109 @@ function hideASISSupplyChain() {
     console.log("AS IS Supply Chain hidden");
 }
 
+// ===== SUPABASE SETUP =====
+async function initSupabase() {
+    try {
+        // Initialize Supabase client
+        supabaseClient = window.supabase.createClient(
+            window.SUPABASE_URL,
+            window.SUPABASE_ANON_KEY
+        );
+
+        console.log('Supabase client initialized');
+
+        // Get or create session
+        const { data, error } = await supabaseClient
+            .from('supply_chain_presentation_session')
+            .select('*')
+            .limit(1)
+            .single();
+
+        if (error) {
+            console.error('Error fetching session:', error);
+            return;
+        }
+
+        sessionId = data.id;
+        console.log('Connected to session:', sessionId);
+
+        // Subscribe to real-time updates
+        realtimeChannel = supabaseClient
+            .channel('supply_chain_presentation_session_changes')
+            .on(
+                'postgres_changes',
+                {
+                    event: 'UPDATE',
+                    schema: 'public',
+                    table: 'supply_chain_presentation_session'
+                },
+                handleSessionUpdate
+            )
+            .subscribe((status) => {
+                console.log('Realtime subscription status:', status);
+            });
+
+        console.log('Supply Chain Auto Real-time subscription active');
+
+    } catch (err) {
+        console.error('Supabase initialization error:', err);
+    }
+}
+
+// ===== SUPABASE UPDATE FUNCTIONS =====
+async function updateSession(updates) {
+    if (!supabaseClient || !sessionId) return;
+
+    try {
+        const { error } = await supabaseClient
+            .from('supply_chain_presentation_session')
+            .update(updates)
+            .eq('id', sessionId);
+
+        if (error) {
+            console.error('Error updating session:', error);
+        } else {
+            console.log('Session updated:', updates);
+        }
+    } catch (err) {
+        console.error('Update error:', err);
+    }
+}
+
+function handleSessionUpdate(payload) {
+    console.log('Received update:', payload);
+
+    if (isLocalAction) {
+        console.log('Ignoring own update');
+        return;
+    }
+
+    const newSlide = payload.new.current_slide;
+    console.log('Syncing to slide:', newSlide);
+
+    syncToSlide(newSlide);
+}
+
+function syncToSlide(targetSlide) {
+    // Set flag to prevent loop
+    isLocalAction = true;
+
+    if (targetSlide === -1 && currentSlide !== -1) {
+        // Restart to beginning
+        restartPresentationLocal();
+    }
+    // For auto presentation, we don't sync forward progression
+    // Only restart is synced
+
+    // Reset flag
+    isLocalAction = false;
+}
+
 // ===== INITIALIZATION =====
 document.addEventListener('DOMContentLoaded', () => {
     initStars();
     initPresentation();
+    initSupabase();
 
     console.log("Supply Chain Presentation (Auto) loaded - SDK ready");
 });
@@ -240,7 +345,15 @@ function showEndScreen() {
     }, 600);
 }
 
-function restartPresentation() {
+async function restartPresentation() {
+    // Update Supabase to sync with all clients
+    if (!isLocalAction) {
+        await updateSession({ current_slide: -1 });
+    }
+    restartPresentationLocal();
+}
+
+function restartPresentationLocal() {
     // Clear any running timer
     if (autoProgressTimer) {
         clearTimeout(autoProgressTimer);
