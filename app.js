@@ -1,34 +1,34 @@
-// ===== PRESENTATION DATA WITH TIMINGS =====
+// ===== PRESENTATION DATA WITH AUDIO TIMINGS =====
 const slides = [
     {
         text: "Virtual Twin of the Supply Chain\n\nIts role is simple:",
         media: null,
-        duration: 6000 // 6s
+        timestamp: 0 // Start at 0s
     },
     {
         text: "To anticipate, prepare, and secure physical flows, with the main goal of increasing margin and increasing fulfillment, while minimizing sustainable impact through emitted CO2 Emissions.\n\nThe virtual twin mirrors the entire supply chain ecosystem:\nsuppliers, their capacities, inventories, real lead times, contractual commitments, logistics routes, and even geopolitical risks.",
         media: "SUP 1",
-        duration: 20000 // 26s - 6s = 20s
+        timestamp: 10 // 10s
     },
     {
         text: "The result?\nOXOS ensures the right materials arrive at the right time, in the right place.\n\nBut more importantly, this virtual twin is generative.\nBy which we mean that our AI engine is generating new optimized scenarios at every moment.",
         media: "SUP 2",
-        duration: 15000 // 41s - 26s = 15s
+        timestamp: 24 // 24s
     },
     {
         text: "It automatically simulates alternative scenarios, proposes Plan B, C, or D, recalculates risks, costs, and lead times, and continuously integrates real-world disruptions.\n\nHere's a concrete example:\na key aerospace & defense supplier announces that they will stop doing business with us in 2 months due to commercial priorities.\n\nNormally, resolving this major challenge would take the team weeks of time to investigate alternatives and calculate the impact.",
         media: "SUP 3",
-        duration: 25000 // 66s - 41s = 25s
+        timestamp: 42 // 42s
     },
     {
         text: "However now, with the generative virtual twin of the supply chain we find the solution within minutes!\n\nA new sourcing scenario is generated,\nthe impact on production orders and customer deliveries is recalculated, alternative suppliers are evaluated, and the best cost–risk tradeoff is proposed.\n\nWith OXOS, we ensure we are a reliable partner to deliver to the demanding A&D customers on time.",
         media: "SUP 4",
-        duration: 20000 // 86s - 66s = 20s
+        timestamp: 72 // 72s
     },
     {
         text: "- even in an unstable world.",
         media: "SUP Content",
-        duration: 0 // Last slide - no auto progression
+        timestamp: 93 // 93s
     }
 ];
 
@@ -44,6 +44,8 @@ let activeMedia = null; // Track currently visible media
 let soundStarted = false; // Track if Supply Chain Sound has been shown
 let autoProgressTimer = null; // Timer for auto progression
 let isPresentationRunning = false; // Track if presentation is running
+let audioPlayer = null; // Audio element
+let audioStartTime = null; // Track when audio started
 
 // ===== SDK INTEGRATION =====
 // Function to send visibility messages to the SDK platform
@@ -167,12 +169,13 @@ function handleSessionUpdate(payload) {
     }
 
     const newSlide = payload.new.current_slide;
-    console.log('Syncing to slide:', newSlide);
+    const audioTimestamp = payload.new.audio_timestamp;
+    console.log('Syncing to slide:', newSlide, 'audio:', audioTimestamp);
 
-    syncToSlide(newSlide);
+    syncToSlide(newSlide, audioTimestamp);
 }
 
-function syncToSlide(targetSlide) {
+async function syncToSlide(targetSlide, audioTimestamp) {
     // Set flag to prevent loop
     isLocalAction = true;
 
@@ -183,13 +186,28 @@ function syncToSlide(targetSlide) {
         // Start presentation from beginning
         const nextBtn = document.getElementById('nextBtn');
 
-        // Show Supply Chain Sound and start auto presentation
+        // Show Supply Chain Sound and start audio presentation
         toggleVisibility("Supply Chain Sound", true);
         soundStarted = true;
         isPresentationRunning = true;
 
         // Hide the button during auto-presentation
         nextBtn.style.display = 'none';
+
+        // Start audio playback
+        if (audioPlayer && !audioPlayer.playing) {
+            try {
+                // Sync audio to the timestamp if provided
+                if (audioTimestamp !== undefined) {
+                    audioPlayer.currentTime = audioTimestamp;
+                }
+                await audioPlayer.play();
+                audioStartTime = Date.now();
+                console.log('Audio started (synced)');
+            } catch (error) {
+                console.error('Error playing audio:', error);
+            }
+        }
 
         // Advance to first slide
         currentSlide = 0;
@@ -203,12 +221,24 @@ function syncToSlide(targetSlide) {
             soundStarted = true;
             isPresentationRunning = true;
             nextBtn.style.display = 'none';
+
+            // Start audio if not already playing
+            if (audioPlayer && !audioPlayer.playing) {
+                try {
+                    if (audioTimestamp !== undefined) {
+                        audioPlayer.currentTime = audioTimestamp;
+                    }
+                    await audioPlayer.play();
+                    console.log('Audio started (synced)');
+                } catch (error) {
+                    console.error('Error playing audio:', error);
+                }
+            }
         }
 
-        while (currentSlide < targetSlide) {
-            currentSlide++;
-            nextSlideLocal();
-        }
+        // Sync to target slide
+        currentSlide = targetSlide;
+        nextSlideLocal();
     }
 
     // Reset flag
@@ -250,6 +280,11 @@ function initPresentation() {
     const nextBtn = document.getElementById('nextBtn');
     const textContent = document.getElementById('textContent');
 
+    // Create audio player
+    audioPlayer = new Audio('VT-Supply-Chain.mp3');
+    audioPlayer.addEventListener('timeupdate', handleAudioTimeUpdate);
+    audioPlayer.addEventListener('ended', handleAudioEnded);
+
     // Hide all SUP media at start (but NOT AS IS Supply Chain yet)
     hideAllMedia();
 
@@ -269,12 +304,40 @@ function initPresentation() {
     updateProgress();
 }
 
+// Handle audio time updates to sync slides
+function handleAudioTimeUpdate() {
+    if (!isPresentationRunning || !audioPlayer) return;
+
+    const currentTime = audioPlayer.currentTime;
+
+    // Find the next slide that should be shown based on audio time
+    for (let i = slides.length - 1; i >= 0; i--) {
+        if (currentTime >= slides[i].timestamp && currentSlide < i) {
+            currentSlide = i;
+            nextSlideLocal();
+            break;
+        }
+    }
+}
+
+// Handle audio ended
+function handleAudioEnded() {
+    console.log('Audio ended');
+    isPresentationRunning = false;
+
+    // Show finish button
+    const nextBtn = document.getElementById('nextBtn');
+    if (nextBtn && currentSlide === slides.length - 1) {
+        nextBtn.style.display = 'block';
+        nextBtn.querySelector('.btn-text').textContent = 'Finish';
+        nextBtn.onclick = showEndScreen;
+    }
+}
+
 async function nextSlide() {
-    const textContent = document.getElementById('textContent');
-    const slideText = textContent.querySelector('.slide-text');
     const nextBtn = document.getElementById('nextBtn');
 
-    // On first click, show Supply Chain Sound and start auto presentation
+    // On first click, show Supply Chain Sound and start audio presentation
     if (!soundStarted) {
         toggleVisibility("Supply Chain Sound", true);
         soundStarted = true;
@@ -282,34 +345,30 @@ async function nextSlide() {
 
         // Hide the button during auto-presentation
         nextBtn.style.display = 'none';
+
+        // Start audio playback
+        if (audioPlayer) {
+            try {
+                await audioPlayer.play();
+                audioStartTime = Date.now();
+                console.log('Audio started');
+            } catch (error) {
+                console.error('Error playing audio:', error);
+            }
+        }
+
+        // Start first slide
+        currentSlide = 0;
+        nextSlideLocal();
+
+        // Update Supabase to sync with all clients
+        if (!isLocalAction) {
+            await updateSession({
+                current_slide: currentSlide,
+                audio_timestamp: audioPlayer ? audioPlayer.currentTime : 0
+            });
+        }
     }
-
-    // Clear any existing timer
-    if (autoProgressTimer) {
-        clearTimeout(autoProgressTimer);
-        autoProgressTimer = null;
-    }
-
-    // Don't hide previous media - keep them visible!
-    // Each new media adds to the scene
-
-    // Move to next slide
-    currentSlide++;
-
-    // Check if presentation is complete
-    if (currentSlide >= slides.length) {
-        // End of presentation
-        isPresentationRunning = false;
-        showEndScreen();
-        return;
-    }
-
-    // Update Supabase to sync with all clients
-    if (!isLocalAction) {
-        await updateSession({ current_slide: currentSlide });
-    }
-
-    nextSlideLocal();
 }
 
 function nextSlideLocal() {
@@ -348,15 +407,10 @@ function nextSlideLocal() {
         // Update progress
         updateProgress();
 
-        // Auto-progress to next slide if duration is set and presentation is running
-        if (isPresentationRunning && slide.duration > 0) {
-            autoProgressTimer = setTimeout(() => {
-                nextSlide();
-            }, slide.duration);
-        } else if (currentSlide === slides.length - 1) {
-            // Last slide - show finish button
-            nextBtn.style.display = 'block';
-            nextBtn.querySelector('.btn-text').textContent = 'Finish';
+        // Check if this is the last slide
+        if (currentSlide === slides.length - 1) {
+            // Last slide - show finish button after audio ends
+            // The finish button will be shown by handleAudioEnded
         }
     }, 500);
 }
@@ -395,6 +449,12 @@ async function restartPresentation() {
 }
 
 function restartPresentationLocal() {
+    // Stop audio
+    if (audioPlayer) {
+        audioPlayer.pause();
+        audioPlayer.currentTime = 0;
+    }
+
     // Clear any running timer
     if (autoProgressTimer) {
         clearTimeout(autoProgressTimer);
