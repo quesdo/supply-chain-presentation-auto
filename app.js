@@ -192,9 +192,9 @@ async function syncToSlide(targetSlide, audioTimestamp) {
         soundStarted = true;
         isPresentationRunning = true;
 
-        // HIDE AS IS Supply Chain and SHOW PSY Content immediately when starting
+        // HIDE AS IS Supply Chain and SHOW SUP Content immediately when starting
         hideASISSupplyChain();
-        showMedia("PSY Content");
+        showMedia("SUP Content");
 
         // Hide the button during auto-presentation
         nextBtn.style.display = 'none';
@@ -373,9 +373,9 @@ async function nextSlide() {
         soundStarted = true;
         isPresentationRunning = true;
 
-        // HIDE AS IS Supply Chain and SHOW PSY Content immediately when starting
+        // HIDE AS IS Supply Chain and SHOW SUP Content immediately when starting
         hideASISSupplyChain();
-        showMedia("PSY Content");
+        showMedia("SUP Content");
 
         // Hide the button during auto-presentation
         nextBtn.style.display = 'none';
@@ -403,11 +403,6 @@ function nextSlideLocal() {
         // Show new media if present (without hiding previous ones)
         if (slide.media) {
             showMedia(slide.media);
-
-            // Hide AS IS Supply Chain when showing SUP Content (last media)
-            if (slide.media === "SUP Content") {
-                hideASISSupplyChain();
-            }
         }
 
         // Animate in new text
