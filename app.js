@@ -103,13 +103,13 @@ async function initSupabase() {
 
         console.log('Supabase client initialized');
 
-        // Get session key from URL param - 'auto' isolates from collab by default
-        const sessionKey = new URLSearchParams(window.location.search).get('session') || 'auto';
+        // Get session key from URL param - 'default' = session standard
+        const sessionKey = new URLSearchParams(window.location.search).get('session') || 'default';
         console.log('Session key:', sessionKey);
 
         // Find existing row for this session key
         let { data, error } = await supabaseClient
-            .from('supply_chain_presentation_session')
+            .from('supply_chain_auto_presentation_session')
             .select('*')
             .eq('session_key', sessionKey)
             .single();
@@ -117,7 +117,7 @@ async function initSupabase() {
         // If no row exists for this session key, create one
         if (error || !data) {
             const { data: newRow, error: insertError } = await supabaseClient
-                .from('supply_chain_presentation_session')
+                .from('supply_chain_auto_presentation_session')
                 .insert({ session_key: sessionKey, current_slide: -1, audio_timestamp: 0 })
                 .select()
                 .single();
@@ -133,13 +133,13 @@ async function initSupabase() {
 
         // Subscribe to real-time updates filtered to this specific row
         realtimeChannel = supabaseClient
-            .channel(`supply_chain_session_${sessionKey}`)
+            .channel(`supply_chain_auto_session_${sessionKey}`)
             .on(
                 'postgres_changes',
                 {
                     event: 'UPDATE',
                     schema: 'public',
-                    table: 'supply_chain_presentation_session',
+                    table: 'supply_chain_auto_presentation_session',
                     filter: `id=eq.${sessionId}`
                 },
                 handleSessionUpdate
