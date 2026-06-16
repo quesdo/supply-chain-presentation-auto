@@ -29,6 +29,11 @@ const slides = [
         text: "- even in an unstable world.",
         media: "SUP Content",
         timestamp: 87 // 87s (1:27)
+    },
+    {
+        text: "OXOS Virtual Twin\nSupply Chain — Live 3D Experience",
+        media: "SupplyGartner",
+        timestamp: 100 // 100s
     }
 ];
 
@@ -65,6 +70,11 @@ function showMedia(mediaName) {
         toggleVisibility(mediaName, true);
         activeMedia = mediaName;
         console.log(`Showing 3D object: ${mediaName}`);
+
+        if (mediaName === "SupplyGartner") {
+            toggleVisibility("General", false);
+            console.log("Hiding General for SupplyGartner display");
+        }
     }
 }
 
@@ -78,7 +88,7 @@ function hideMedia(mediaName) {
 
 // Function to hide all media
 function hideAllMedia() {
-    const allMedia = ["SUP 1", "SUP 2", "SUP 3", "SUP 4", "SUP Content"];
+    const allMedia = ["SUP 1", "SUP 2", "SUP 3", "SUP 4", "SUP Content", "SupplyGartner"];
     allMedia.forEach(media => {
         toggleVisibility(media, false);
     });
@@ -471,6 +481,10 @@ function showEndScreen() {
     const textContent = document.getElementById('textContent');
     const slideText = textContent.querySelector('.slide-text');
     const nextBtn = document.getElementById('nextBtn');
+
+    // Show General and hide SupplyGartner when finishing
+    toggleVisibility("General", true);
+    toggleVisibility("SupplyGartner", false);
 
     // Animate out
     textContent.classList.remove('show');
